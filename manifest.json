@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Drenagem Mineração — Dimensionamento Hidráulico</title>
+<meta name="description" content="Dimensionamento de canais, tubos corrugados, bacias de sedimentação e dissipadores de energia para mineração a céu aberto">
+<meta name="theme-color" content="#0F6E56">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --bg-page:#F1EFE8;
+  --surface-2:#ffffff;
+  --surface-1:#F7F6F1;
+  --border:#D3D1C7;
+  --border-strong:#B4B2A9;
+  --text-primary:#2C2C2A;
+  --text-secondary:#5F5E5A;
+  --text-muted:#888780;
+  --accent:#0F6E56;
+  --accent-bg:#E1F5EE;
+  --accent-strong:#085041;
+  --warn-bg:#FAEEDA;--warn-text:#854F0B;--warn-border:#FAC775;
+  --err-bg:#FCEBEB;--err-text:#A32D2D;--err-border:#F09595;
+  --ok-bg:#EAF3DE;--ok-text:#3B6D11;--ok-border:#C0DD97;
+  --radius:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg-page);
+  color:var(--text-primary);
+  padding-bottom:2rem;
+  -webkit-font-smoothing:antialiased;
+}
+header{
+  background:var(--accent);
+  color:#fff;
+  padding:1.1rem 1rem;
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+header h1{font-size:17px;font-weight:600;line-height:1.3}
+header p{font-size:12px;opacity:.85;margin-top:2px}
+.wrap{max-width:720px;margin:0 auto;padding:0 1rem}
+.module-nav{
+  display:flex;gap:6px;overflow-x:auto;padding:.75rem 1rem;
+  background:var(--surface-2);border-bottom:0.5px solid var(--border);
+  position:sticky;top:64px;z-index:40;-webkit-overflow-scrolling:touch;
+}
+.module-nav::-webkit-scrollbar{display:none}
+.mtab{
+  flex-shrink:0;padding:8px 14px;font-size:13px;font-weight:500;
+  border-radius:20px;border:0.5px solid var(--border);background:var(--surface-1);
+  color:var(--text-secondary);cursor:pointer;white-space:nowrap;
+  display:flex;align-items:center;gap:5px;
+}
+.mtab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.panel{display:none;padding:1.25rem 1rem}
+.panel.active{display:block}
+.grid2{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:720px){.grid2{grid-template-columns:1fr 1fr}}
+.card{background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:12px}
+.ctitle{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px}
+.field input,.field select,.field textarea{
+  width:100%;padding:9px 11px;border:0.5px solid var(--border);border-radius:var(--radius);
+  font-size:15px;background:var(--surface-1);color:var(--text-primary);font-family:inherit;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-bg)}
+.btn{
+  width:100%;padding:11px;font-size:14px;font-weight:600;border:0.5px solid var(--border-strong);
+  border-radius:var(--radius);cursor:pointer;background:var(--surface-1);color:var(--text-primary);
+  margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn:active{transform:scale(0.98)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.section-title{font-size:16px;font-weight:600;margin-bottom:12px;margin-top:0}
+.rg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+@media(min-width:480px){.rg{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}}
+.met{background:var(--surface-1);border-radius:var(--radius);padding:.7rem .9rem}
+.ml{font-size:11.5px;color:var(--text-muted);margin-bottom:3px}
+.mv{font-size:19px;font-weight:600;color:var(--text-primary)}
+.mu{font-size:11.5px;color:var(--text-secondary);margin-left:2px;font-weight:400}
+.al{padding:10px 13px;border-radius:var(--radius);font-size:13.5px;margin-top:10px;border:0.5px solid;line-height:1.55}
+.ai{background:var(--accent-bg);border-color:#9FE1CB;color:var(--accent-strong)}
+.aw{background:var(--warn-bg);border-color:var(--warn-border);color:var(--warn-text)}
+.ae{background:var(--err-bg);border-color:var(--err-border);color:var(--err-text)}
+.as{background:var(--ok-bg);border-color:var(--ok-border);color:var(--ok-text)}
+table.res{width:100%;font-size:13.5px;border-collapse:collapse;margin-top:10px}
+table.res th{font-size:11px;font-weight:600;color:var(--text-muted);text-align:left;padding:5px 6px;border-bottom:0.5px solid var(--border)}
+table.res td{padding:6px 6px;border-bottom:0.5px solid var(--border)}
+table.res tr:last-child td{border-bottom:none}
+.highlight-row td{background:var(--accent-bg);color:var(--accent-strong);font-weight:600}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:11.5px;font-weight:600}
+.b-ok{background:var(--ok-bg);color:var(--ok-text)}.b-warn{background:var(--warn-bg);color:var(--warn-text)}.b-err{background:var(--err-bg);color:var(--err-text)}
+.info{font-size:11.5px;color:var(--text-muted);margin-top:4px;line-height:1.4}
+.divider{border:none;border-top:0.5px solid var(--border);margin:1rem 0}
+svg.diagram{width:100%;margin-top:12px}
+.install-banner{
+  display:none;background:var(--accent-bg);border:0.5px solid #9FE1CB;border-radius:12px;
+  padding:12px 14px;margin:14px 1rem 0;font-size:13px;color:var(--accent-strong);
+  align-items:center;justify-content:space-between;gap:10px;
+}
+.install-banner button{
+  background:var(--accent);color:#fff;border:none;padding:7px 14px;border-radius:var(--radius);
+  font-size:13px;font-weight:600;flex-shrink:0;
+}
+footer{text-align:center;font-size:11.5px;color:var(--text-muted);padding:1.5rem 1rem .5rem;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Drenagem Mineração</h1>
+    <p>Dimensionamento hidráulico para mina a céu aberto</p>
+  </div>
+</header>
+
+<div class="install-banner" id="installBanner">
+  <span>Instale o app na tela inicial para uso offline em campo.</span>
+  <button id="installBtn">Instalar</button>
+</div>
+
+<nav class="module-nav" id="moduleNav">
+  <button class="mtab active" data-panel="racional">Método racional</button>
+  <button class="mtab" data-panel="canal">Canal trapezoidal</button>
+  <button class="mtab" data-panel="tubo">Tubo corrugado</button>
+  <button class="mtab" data-panel="bacia">Bacia de sedimentação</button>
+  <button class="mtab" data-panel="dissipador">Dissipador de energia</button>
+  <button class="mtab" data-panel="valeta">Valeta de crista</button>
+  <button class="mtab" data-panel="sarjeta">Sarjeta de pista</button>
+  <button class="mtab" data-panel="relatorio">Memorial descritivo</button>
+</nav>
+
+<div class="wrap">
+
+<!-- MÉTODO RACIONAL -->
+<div id="panel-racional" class="panel active">
+  <p class="section-title">Vazão de pico — Método racional</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Bacia hidrográfica</div>
+        <div class="field"><label>Área da bacia A (ha)</label><input type="number" id="r-A" value="50" step="1" min="0.1"></div>
+        <div class="field"><label>Coeficiente de runoff C</label>
+          <select id="r-C">
+            <option value="0.20">0.20 — vegetação densa / solo permeável</option>
+            <option value="0.35">0.35 — pastagem / solo médio</option>
+            <option value="0.50">0.50 — solo compactado / mineração revegetada</option>
+            <option value="0.65" selected>0.65 — área de mineração ativa</option>
+            <option value="0.75">0.75 — pilha de estéril / bota-fora</option>
+            <option value="0.85">0.85 — superfície rochosa exposta</option>
+            <option value="0.95">0.95 — vias pavimentadas / rocha lisa</option>
+          </select>
+        </div>
+        <div class="field"><label>Comprimento do talvegue L (m)</label><input type="number" id="r-L" value="800" step="10" min="50"></div>
+        <div class="field"><label>Declividade média da bacia S (m/m)</label><input type="number" id="r-S" value="0.05" step="0.005" min="0.001"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Chuva de projeto</div>
+        <div class="field"><label>Período de retorno Tr (anos)</label>
+          <select id="r-Tr">
+            <option value="5">5 anos — drenagem provisória</option>
+            <option value="10" selected>10 anos — drenagem principal</option>
+            <option value="25">25 anos — obras permanentes</option>
+            <option value="50">50 anos — obras de grande porte</option>
+          </select>
+        </div>
+        <div class="field"><label>Intensidade de chuva i (mm/h)</label><input type="number" id="r-i" value="80" step="5" min="10"></div>
+        <p class="info">Consulte isozonas ou equações IDF regionais (DNIT/DAER-MG)</p>
+      </div>
+      <button class="btn primary" onclick="calcRacional()">Calcular vazão de pico</button>
+    </div>
+    <div>
+      <p class="section-title">Resultados</p>
+      <div id="racional-result"><div class="al ai">Preencha os parâmetros e calcule.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CANAL TRAPEZOIDAL -->
+<div id="panel-canal" class="panel">
+  <p class="section-title">Canal trapezoidal — Manning</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Parâmetros</div>
+        <div class="field"><label>Vazão de projeto Q (m³/s)</label><input type="number" id="c-Q" value="2.5" step="0.1" min="0"></div>
+        <div class="field"><label>Declividade do canal I (m/m)</label><input type="number" id="c-I" value="0.02" step="0.001" min="0.0001"></div>
+        <div class="field"><label>Coeficiente de Manning n</label>
+          <select id="c-n">
+            <option value="0.013">Concreto liso (n=0.013)</option>
+            <option value="0.016" selected>Concreto rugoso / escavado (n=0.016)</option>
+            <option value="0.020">Rocha escavada (n=0.020)</option>
+            <option value="0.025">Terra natural (n=0.025)</option>
+            <option value="0.030">Terra com vegetação (n=0.030)</option>
+            <option value="0.035">Terra muito rugosa (n=0.035)</option>
+          </select>
+        </div>
+        <div class="field"><label>Inclinação das laterais z (H:1V)</label>
+          <select id="c-z">
+            <option value="0.5">0.5:1 (corte em rocha)</option>
+            <option value="1.0">1:1 (terra firme)</option>
+            <option value="1.5" selected>1.5:1 (recomendado)</option>
+            <option value="2.0">2:1 (solo arenoso)</option>
+            <option value="2.5">2.5:1 (solo muito arenoso)</option>
+          </select>
+        </div>
+        <div class="field"><label>Folga de segurança / borda livre (m)</label><input type="number" id="c-fb" value="0.30" step="0.05" min="0.1"></div>
+        <div class="field"><label>Base mínima do canal b (m)</label><input type="number" id="c-bmin" value="0.5" step="0.1" min="0.1"></div>
+      </div>
+      <button class="btn primary" onclick="calcCanal()">Dimensionar canal</button>
+    </div>
+    <div>
+      <p class="section-title">Seção hidráulica ótima</p>
+      <div id="canal-result"><div class="al ai">Preencha os parâmetros e dimensione.</div></div>
+      <div id="canal-diagram"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TUBO CORRUGADO -->
+<div id="panel-tubo" class="panel">
+  <p class="section-title">Tubo corrugado PEAD</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Parâmetros</div>
+        <div class="field"><label>Vazão de projeto Q (m³/s)</label><input type="number" id="t-Q" value="1.5" step="0.1" min="0"></div>
+        <div class="field"><label>Declividade I (m/m)</label><input type="number" id="t-I" value="0.015" step="0.001" min="0.0001"></div>
+        <div class="field"><label>Tipo de tubo</label>
+          <select id="t-n">
+            <option value="0.011">PEAD liso interno (n=0.011)</option>
+            <option value="0.014" selected>PEAD corrugado (n=0.014)</option>
+            <option value="0.016">Metálico corrugado (n=0.016)</option>
+            <option value="0.024">Concreto simples (n=0.024)</option>
+          </select>
+        </div>
+        <div class="field"><label>Grau de enchimento máximo</label>
+          <select id="t-fill">
+            <option value="0.75">75% — recomendado drenagem</option>
+            <option value="0.80" selected>80% — padrão NBR</option>
+            <option value="0.90">90% — máximo admissível</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" onclick="calcTubo()">Selecionar diâmetro</button>
+      <div class="al ai" style="font-size:12px"><strong>Diâmetros comerciais PEAD (DN):</strong> 300 a 2000 mm</div>
+    </div>
+    <div>
+      <p class="section-title">Resultado</p>
+      <div id="tubo-result"><div class="al ai">Preencha os parâmetros e selecione.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- BACIA DE SEDIMENTAÇÃO -->
+<div id="panel-bacia" class="panel">
+  <p class="section-title">Bacia de sedimentação</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Dados hidrológicos</div>
+        <div class="field"><label>Vazão de projeto Q (m³/s)</label><input type="number" id="b-Q" value="1.8" step="0.1" min="0"></div>
+        <div class="field"><label>Tempo de detenção mínimo td</label>
+          <select id="b-td">
+            <option value="10">10 min — sedimentos grossos</option>
+            <option value="15" selected>15 min — padrão mineração</option>
+            <option value="20">20 min — sedimentos finos</option>
+            <option value="30">30 min — alta carga sólida</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Dimensões e geometria</div>
+        <div class="field"><label>Relação comprimento/largura (L/B)</label>
+          <select id="b-lb">
+            <option value="2">2:1 (mínimo)</option>
+            <option value="3" selected>3:1 (recomendado)</option>
+            <option value="4">4:1 (alta eficiência)</option>
+            <option value="5">5:1 (máxima retenção)</option>
+          </select>
+        </div>
+        <div class="field"><label>Profundidade útil (m)</label><input type="number" id="b-h" value="1.5" step="0.1" min="0.5" max="5"></div>
+        <div class="field"><label>Borda livre (m)</label><input type="number" id="b-bl" value="0.5" step="0.05" min="0.2"></div>
+        <div class="field"><label>Volume de lodo estimado por evento (m³)</label><input type="number" id="b-lodo" value="50" step="5" min="0"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Partícula de projeto (Stokes)</div>
+        <div class="field"><label>Diâmetro mínimo a reter</label>
+          <select id="b-d">
+            <option value="0.05">50 μm — areia fina</option>
+            <option value="0.1" selected>100 μm — areia média</option>
+            <option value="0.2">200 μm — areia grossa</option>
+            <option value="0.5">500 μm — cascalho fino</option>
+          </select>
+        </div>
+        <div class="field"><label>Densidade do sólido ρs (kg/m³)</label><input type="number" id="b-rho" value="2650" step="50" min="2000" max="3500"></div>
+      </div>
+      <button class="btn primary" onclick="calcBacia()">Dimensionar bacia</button>
+    </div>
+    <div>
+      <p class="section-title">Resultado</p>
+      <div id="bacia-result"><div class="al ai">Preencha os parâmetros e dimensione.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DISSIPADOR DE ENERGIA -->
+<div id="panel-dissipador" class="panel">
+  <p class="section-title">Dissipador de energia</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Dados da seção de chegada</div>
+        <div class="field"><label>Vazão Q (m³/s)</label><input type="number" id="d-Q" value="3.0" step="0.1" min="0.01"></div>
+        <div class="field"><label>Largura do canal b (m)</label><input type="number" id="d-b" value="2.0" step="0.1" min="0.1"></div>
+        <div class="field"><label>Velocidade na chegada V₁ (m/s)</label><input type="number" id="d-V1" value="6.5" step="0.1" min="0.1"></div>
+        <div class="field"><label>Tipo de dissipador</label>
+          <select id="d-tipo">
+            <option value="bacia">Bacia de amortecimento (ressalto)</option>
+            <option value="enrocamento">Enrocamento / rip-rap</option>
+            <option value="degrau">Degraus em cascata</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Enrocamento (quando aplicável)</div>
+        <div class="field"><label>Diâmetro médio das pedras D₅₀ (m)</label><input type="number" id="d-D50" value="0.30" step="0.05" min="0.05"></div>
+        <div class="field"><label>Ângulo de talude proteção θ (°)</label><input type="number" id="d-theta" value="18" step="1" min="5" max="40"></div>
+      </div>
+      <button class="btn primary" onclick="calcDissipador()">Dimensionar dissipador</button>
+    </div>
+    <div>
+      <p class="section-title">Resultado</p>
+      <div id="dissipador-result"><div class="al ai">Preencha os parâmetros e dimensione.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- VALETA DE CRISTA -->
+<div id="panel-valeta" class="panel">
+  <p class="section-title">Valeta de crista de talude</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Parâmetros hidrológicos</div>
+        <div class="field"><label>Vazão de projeto Q (m³/s)</label><input type="number" id="v-Q" value="1.2" step="0.1" min="0"></div>
+        <div class="field"><label>Declividade longitudinal I (m/m)</label><input type="number" id="v-I" value="0.03" step="0.005" min="0.001"></div>
+        <div class="field"><label>Coeficiente de Manning n</label>
+          <select id="v-n">
+            <option value="0.012">Concreto pré-moldado (n=0.012)</option>
+            <option value="0.016" selected>Concreto moldado in situ (n=0.016)</option>
+            <option value="0.020">Rocha escavada (n=0.020)</option>
+            <option value="0.025">Terra revestida com gramínea (n=0.025)</option>
+          </select>
+        </div>
+        <div class="field"><label>Formato da seção</label>
+          <select id="v-sec">
+            <option value="trapezoidal" selected>Trapezoidal (z=1:1)</option>
+            <option value="triangular">Triangular (z=1.5:1)</option>
+            <option value="retangular">Retangular</option>
+          </select>
+        </div>
+        <div class="field"><label>Distância mínima da crista (m)</label><input type="number" id="v-dist" value="2.0" step="0.5" min="1"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Altura do talude</div>
+        <div class="field"><label>Altura do talude H_tal (m)</label><input type="number" id="v-Htal" value="15" step="1" min="1"></div>
+        <div class="field"><label>Inclinação do talude (H:V)</label>
+          <select id="v-italude">
+            <option value="1.5">1.5:1 (íngreme)</option>
+            <option value="2" selected>2:1 (padrão)</option>
+            <option value="3">3:1 (suave)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" onclick="calcValeta()">Dimensionar valeta</button>
+    </div>
+    <div>
+      <p class="section-title">Resultado</p>
+      <div id="valeta-result"><div class="al ai">Preencha os parâmetros e dimensione.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SARJETA DE PISTA -->
+<div id="panel-sarjeta" class="panel">
+  <p class="section-title">Sarjeta de pista de acesso</p>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="ctitle">Dados da pista</div>
+        <div class="field"><label>Largura da pista W (m)</label><input type="number" id="s-W" value="14" step="0.5" min="4"></div>
+        <div class="field"><label>Declividade transversal e (%)</label><input type="number" id="s-e" value="3" step="0.5" min="1" max="10"></div>
+        <div class="field"><label>Declividade longitudinal S (%)</label><input type="number" id="s-S" value="8" step="0.5" min="0.5"></div>
+        <div class="field"><label>Comprimento entre saídas L (m)</label><input type="number" id="s-L" value="60" step="5" min="10"></div>
+        <div class="field"><label>Intensidade de chuva i (mm/h)</label><input type="number" id="s-i" value="80" step="5" min="10"></div>
+        <div class="field"><label>Coef. runoff pista C</label>
+          <select id="s-C">
+            <option value="0.70">0.70 — cascalho compactado</option>
+            <option value="0.80" selected>0.80 — solo compactado / base</option>
+            <option value="0.90">0.90 — pavimento asfáltico</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Sarjeta triangular</div>
+        <div class="field"><label>Coeficiente Manning sarjeta n</label>
+          <select id="s-n">
+            <option value="0.013" selected>Concreto (n=0.013)</option>
+            <option value="0.016">Pedra argamassada (n=0.016)</option>
+          </select>
+        </div>
+        <div class="field"><label>Inclinação face interna Z₁ (H:1V)</label><input type="number" id="s-z1" value="0.5" step="0.1" min="0.1" max="2"></div>
+        <div class="field"><label>Inclinação face externa Z₂ (H:1V)</label><input type="number" id="s-z2" value="12" step="0.5" min="1"></div>
+      </div>
+      <button class="btn primary" onclick="calcSarjeta()">Dimensionar sarjeta</button>
+    </div>
+    <div>
+      <p class="section-title">Resultado</p>
+      <div id="sarjeta-result"><div class="al ai">Preencha os parâmetros e dimensione.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RELATÓRIO / MEMORIAL -->
+<div id="panel-relatorio" class="panel">
+  <p class="section-title">Memorial descritivo de projeto de drenagem</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="ctitle">Identificação do projeto</div>
+      <div class="field"><label>Nome do projeto / área</label><input type="text" id="rel-nome" value="Drenagem Alegria Norte — Bancada 720"></div>
+      <div class="field"><label>Localização</label><input type="text" id="rel-local" value="Mina de Alegria, Mariana-MG"></div>
+      <div class="field"><label>Data do projeto</label><input type="date" id="rel-data"></div>
+      <div class="field"><label>Engenheiro responsável</label><input type="text" id="rel-eng" placeholder="Nome / CREA"></div>
+      <div class="field"><label>Período de retorno adotado (anos)</label>
+        <select id="rel-Tr">
+          <option value="5">5 anos</option>
+          <option value="10" selected>10 anos</option>
+          <option value="25">25 anos</option>
+          <option value="50">50 anos</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Parâmetros consolidados</div>
+      <div class="field"><label>Área da bacia A (ha)</label><input type="number" id="rel-A" value="50" step="1" min="0.1"></div>
+      <div class="field"><label>Coef. runoff C médio</label><input type="number" id="rel-C" value="0.65" step="0.01" min="0.1" max="1"></div>
+      <div class="field"><label>Intensidade de chuva i (mm/h)</label><input type="number" id="rel-i" value="80" step="5" min="10"></div>
+      <div class="field"><label>Vazão de pico Q (m³/s)</label><input type="number" id="rel-Q" value="7.22" step="0.01" min="0"></div>
+      <div class="field"><label>Observações gerais</label><textarea id="rel-obs" rows="2" placeholder="Condicionantes, restrições, normas..."></textarea></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Estruturas projetadas — resumo</div>
+    <div id="est-rows"></div>
+    <button class="btn" style="width:auto;padding:8px 14px;margin-top:6px" onclick="addEstrutura()">+ Adicionar estrutura</button>
+  </div>
+
+  <button class="btn primary" onclick="gerarRelatorio()">Gerar memorial descritivo</button>
+  <div id="relatorio-out"></div>
+</div>
+
+</div>
+
+<footer>
+  Aplicativo de dimensionamento hidráulico — Samarco Mineração<br>
+  Referências: NBR 10844, DNIT 018/2004-PRO, ABNT NBR 7229, Manual DAER-MG<br>
+  Funciona offline após a primeira visita
+</footer>
+
+<script>
+// ---------- NAVEGAÇÃO ----------
+document.querySelectorAll('.mtab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+
+function fv(id){return parseFloat(document.getElementById(id).value)||0}
+function sv(id){return document.getElementById(id).value}
+function showErr(id,msg){document.getElementById(id).innerHTML=`<div class="al ae">${msg}</div>`}
+
+// ---------- CANAL TRAPEZOIDAL ----------
+function calcCanal(){
+  const Q=fv('c-Q'), I=fv('c-I'), n=fv('c-n'), z=fv('c-z'), fb=fv('c-fb'), bmin=fv('c-bmin');
+  if(!Q||!I||Q<=0||I<=0){showErr('canal-result','Verifique os valores de entrada.');return}
+  let b=bmin;
+  let yLow=0.01,yHigh=20,y=0;
+  for(let i=0;i<100;i++){
+    y=(yLow+yHigh)/2;
+    const A=(b+z*y)*y;
+    const P=b+2*y*Math.sqrt(1+z*z);
+    const R=A/P;
+    const Qcalc=(1/n)*A*Math.pow(R,2/3)*Math.pow(I,0.5);
+    if(Math.abs(Qcalc-Q)<0.0001){break}
+    if(Qcalc<Q){yLow=y}else{yHigh=y}
+  }
+  const A=(b+z*y)*y;
+  const P=b+2*y*Math.sqrt(1+z*z);
+  const R=A/P;
+  const V=(1/n)*Math.pow(R,2/3)*Math.pow(I,0.5);
+  const Qv=V*A;
+  const H=y+fb;
+  const btopo=b+2*z*y;
+  const btopo_tot=b+2*z*H;
+  const vmax=V<=4.5?'ok':V<=6?'warn':'err';
+  const vmsg=V<=4.5?'Velocidade adequada — sem risco de erosão':V<=6?'Velocidade elevada — avaliar revestimento':'Velocidade crítica — revestimento obrigatório';
+
+  document.getElementById('canal-result').innerHTML=`
+    <div class="rg">
+      <div class="met"><div class="ml">Lâmina d'água y</div><div class="mv">${y.toFixed(2)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Altura total H</div><div class="mv">${H.toFixed(2)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Largura base b</div><div class="mv">${b.toFixed(2)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Largura topo (lâmina)</div><div class="mv">${btopo.toFixed(2)}<span class="mu">m</span></div></div>
+    </div>
+    <div class="rg">
+      <div class="met"><div class="ml">Área molhada A</div><div class="mv">${A.toFixed(3)}<span class="mu">m²</span></div></div>
+      <div class="met"><div class="ml">Raio hidráulico R</div><div class="mv">${R.toFixed(3)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Velocidade média V</div><div class="mv">${V.toFixed(2)}<span class="mu">m/s</span></div></div>
+      <div class="met"><div class="ml">Vazão confirmada Q</div><div class="mv">${Qv.toFixed(3)}<span class="mu">m³/s</span></div></div>
+    </div>
+    <div class="al ${vmax}">${vmsg} (V = ${V.toFixed(2)} m/s)</div>
+    <div class="al ai" style="font-size:12px"><strong>Resumo construtivo:</strong> b=${b.toFixed(2)}m, taludes ${z}:1, y=${y.toFixed(2)}m, borda livre ${fb}m, H=${H.toFixed(2)}m, abertura no topo = ${btopo_tot.toFixed(2)}m</div>
+  `;
+
+  document.getElementById('canal-diagram').innerHTML=`
+    <svg viewBox="0 0 340 160" class="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seção transversal do canal trapezoidal">
+      <polygon points="20,140 80,60 130,60 130,140" fill="#d3c4a0" opacity="0.5"/>
+      <polygon points="210,60 260,60 320,140 210,140" fill="#d3c4a0" opacity="0.5"/>
+      <polygon points="86,100 130,82 210,82 254,100" fill="#B5D4F4" opacity="0.7"/>
+      <polyline points="20,140 80,60 130,60 210,60 260,60 320,140" fill="none" stroke="#73726c" stroke-width="2"/>
+      <line x1="86" y1="100" x2="254" y2="100" stroke="#185FA5" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <line x1="86" y1="100" x2="86" y2="60" stroke="#fab219" stroke-width="1" stroke-dasharray="3,2"/>
+      <line x1="254" y1="100" x2="254" y2="60" stroke="#fab219" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="175" y="90" fill="#185FA5" font-size="10">y=${y.toFixed(2)}m</text>
+      <text x="175" y="75" fill="#854F0B" font-size="10">fb=${fb.toFixed(2)}m</text>
+      <text x="165" y="155" fill="#444" font-size="10" text-anchor="middle">b=${b.toFixed(2)}m</text>
+      <text x="170" y="13" fill="#444" font-size="11" text-anchor="middle" font-weight="600">Seção trapezoidal — n=${n} / I=${I} / z=${z}:1</text>
+    </svg>`;
+}
+
+// ---------- TUBO CORRUGADO ----------
+function calcTubo(){
+  const Q=fv('t-Q'), I=fv('t-I'), n=fv('t-n'), fill=fv('t-fill');
+  if(!Q||!I||Q<=0||I<=0){showErr('tubo-result','Verifique os valores de entrada.');return}
+  const DNs=[0.300,0.400,0.500,0.600,0.700,0.800,0.900,1.000,1.100,1.200,1.400,1.600,1.800,2.000];
+  let chosen=null, Qplena=0;
+  for(const D of DNs){
+    const A=Math.PI*D*D/4;
+    const R=D/4;
+    const Qp=(1/n)*A*Math.pow(R,2/3)*Math.pow(I,0.5);
+    if(fill*Qp>=Q){chosen=D; Qplena=Qp; break;}
+  }
+  if(!chosen){
+    document.getElementById('tubo-result').innerHTML=`<div class="al ae">Vazão excede DN 2000. Considere múltiplos tubos ou canal revestido.</div>`;
+    return;
+  }
+  const DN_mm=Math.round(chosen*1000);
+  const A=Math.PI*chosen*chosen/4;
+  const Vplena_r=Qplena/A;
+  const frac=(Q/Qplena*100).toFixed(1);
+  const vMin=Vplena_r<0.6;
+
+  document.getElementById('tubo-result').innerHTML=`
+    <div class="card" style="border-color:#9FE1CB">
+      <div class="ctitle">Diâmetro selecionado</div>
+      <div style="font-size:34px;font-weight:700;color:var(--accent-strong)">DN ${DN_mm} mm</div>
+      <span class="badge b-ok">PEAD Corrugado — n=${n}</span>
+    </div>
+    <div class="rg">
+      <div class="met"><div class="ml">Q plena (seção)</div><div class="mv">${Qplena.toFixed(3)}<span class="mu">m³/s</span></div></div>
+      <div class="met"><div class="ml">Q admissível</div><div class="mv">${(Qplena*fill).toFixed(3)}<span class="mu">m³/s</span></div></div>
+      <div class="met"><div class="ml">Grau de enchimento</div><div class="mv">${frac}<span class="mu">%</span></div></div>
+      <div class="met"><div class="ml">Vel. plena</div><div class="mv">${Vplena_r.toFixed(2)}<span class="mu">m/s</span></div></div>
+    </div>
+    <div class="al ${vMin?'aw':'ai'}">${vMin?'Velocidade mínima (0.6 m/s) — risco de sedimentação interna.':'Velocidade adequada — sem risco de sedimentação.'}</div>
+    <div class="al ai" style="font-size:12px"><strong>Especificação:</strong> Tubo PEAD corrugado DN${DN_mm}mm, I=${I}, n=${n}. Verificar cobrimento mínimo (≥0.6m).</div>
+  `;
+}
+
+// ---------- BACIA DE SEDIMENTAÇÃO ----------
+function calcBacia(){
+  const Q=fv('b-Q'), tdMin=fv('b-td'), LB=fv('b-lb'), h=fv('b-h'), bl=fv('b-bl'), lodo=fv('b-lodo');
+  const d_mm=fv('b-d'), rho=fv('b-rho');
+  if(!Q||Q<=0){showErr('bacia-result','Verifique os valores de entrada.');return}
+  const td=tdMin*60, rho_agua=1000, g=9.81, mu=0.001, d_m=d_mm/1000;
+  const vs=(rho-rho_agua)*g*d_m*d_m/(18*mu);
+  const V_util=Q*td;
+  const A_stokes=Q/vs;
+  const A_detencao=V_util/h;
+  const A_sup=Math.max(A_stokes, A_detencao);
+  const L=Math.sqrt(LB*A_sup), B=A_sup/L;
+  const H_total=h+bl;
+  const efic=Math.min(vs*A_sup/Q*100, 100);
+
+  document.getElementById('bacia-result').innerHTML=`
+    <div class="rg">
+      <div class="met"><div class="ml">Comprimento L</div><div class="mv">${L.toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Largura B</div><div class="mv">${B.toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Profundidade útil</div><div class="mv">${h.toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Altura total</div><div class="mv">${H_total.toFixed(1)}<span class="mu">m</span></div></div>
+    </div>
+    <div class="rg">
+      <div class="met"><div class="ml">Área superficial</div><div class="mv">${A_sup.toFixed(0)}<span class="mu">m²</span></div></div>
+      <div class="met"><div class="ml">Volume útil</div><div class="mv">${V_util.toFixed(0)}<span class="mu">m³</span></div></div>
+      <div class="met"><div class="ml">Vel. sedim. Stokes</div><div class="mv">${(vs*1000).toFixed(2)}<span class="mu">mm/s</span></div></div>
+      <div class="met"><div class="ml">Eficiência remoção</div><div class="mv">${efic.toFixed(0)}<span class="mu">%</span></div></div>
+    </div>
+    <div class="al ${efic>=90?'ai':efic>=70?'aw':'ae'}">${efic>=90?'Eficiência de remoção adequada (≥90%)':efic>=70?'Eficiência moderada (70–90%) — considere aumentar área':'Eficiência insuficiente — aumente área superficial ou reduza Q'}</div>
+    <div class="al ai" style="font-size:12px">
+      <strong>Critério dimensionante:</strong> ${A_stokes>A_detencao?'Sedimentação (Stokes)':'Detenção (tempo mínimo)'}<br>
+      <strong>Especificação:</strong> L=${L.toFixed(1)}m × B=${B.toFixed(1)}m × H=${H_total.toFixed(1)}m | Lodo estimado: ${lodo}m³ por limpeza<br>
+      <strong>Manutenção:</strong> Remover lodo quando acúmulo atingir 30–40% da profundidade útil.
+    </div>
+    <svg viewBox="0 0 340 130" class="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Esquema em planta da bacia de sedimentação">
+      <rect x="10" y="20" width="320" height="100" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="1.5"/>
+      <rect x="10" y="55" width="30" height="20" fill="#B5D4F4" stroke="#185FA5" stroke-width="1"/>
+      <rect x="300" y="55" width="30" height="20" fill="#B5D4F4" stroke="#185FA5" stroke-width="1"/>
+      <line x1="100" y1="20" x2="100" y2="95" stroke="#0F6E56" stroke-width="1" stroke-dasharray="4,2"/>
+      <line x1="200" y1="45" x2="200" y2="120" stroke="#0F6E56" stroke-width="1" stroke-dasharray="4,2"/>
+      <rect x="10" y="100" width="320" height="20" fill="#d3c4a0" opacity="0.6"/>
+      <text x="170" y="113" fill="#633806" font-size="9" text-anchor="middle">acumulação de lodo</text>
+      <text x="170" y="15" fill="#085041" font-size="10" text-anchor="middle" font-weight="600">L = ${L.toFixed(1)} m</text>
+      <text x="170" y="65" fill="#0F6E56" font-size="10" text-anchor="middle">td = ${tdMin} min | efic. = ${efic.toFixed(0)}%</text>
+    </svg>
+  `;
+}
+
+// ---------- DISSIPADOR DE ENERGIA ----------
+function calcDissipador(){
+  const Q=fv('d-Q'),b=fv('d-b'),V1=fv('d-V1'),tipo=sv('d-tipo');
+  const g=9.81;
+  const y1=Q/(b*V1);
+  const Fr1=V1/Math.sqrt(g*y1);
+  const y2=y1/2*(Math.sqrt(1+8*Fr1*Fr1)-1);
+  const V2=Q/(b*y2);
+  const E1=y1+V1*V1/(2*g), E2=y2+V2*V2/(2*g), dE=E1-E2;
+  const Lb=6.1*y2;
+  const D50=fv('d-D50');
+  const vCrit=1.36*Math.pow(D50,0.5)*Math.pow(2650/1000-1,0.5);
+  let html='';
+  let frClass=Fr1>4.5?'b-err':Fr1>2.5?'b-warn':'b-ok';
+  let frMsg=Fr1>4.5?'ressalto estável — bacia necessária':Fr1>2.5?'ressalto oscilante — usar deflectores':'ressalto ondulado — dissipação moderada';
+
+  if(tipo==='bacia'){
+    html=`
+      <div class="rg">
+        <div class="met"><div class="ml">Número de Froude Fr₁</div><div class="mv">${Fr1.toFixed(2)}</div></div>
+        <div class="met"><div class="ml">Lâmina antes y₁</div><div class="mv">${y1.toFixed(3)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Lâmina após y₂</div><div class="mv">${y2.toFixed(3)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Perda de energia ΔE</div><div class="mv">${dE.toFixed(3)}<span class="mu">m</span></div></div>
+      </div>
+      <div class="rg">
+        <div class="met"><div class="ml">Comprimento bacia L</div><div class="mv">${Lb.toFixed(2)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Largura adotada</div><div class="mv">${b.toFixed(2)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Profundidade bacia</div><div class="mv">${(y2*1.25).toFixed(2)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Velocidade pós-ressalto</div><div class="mv">${V2.toFixed(2)}<span class="mu">m/s</span></div></div>
+      </div>
+      <div class="al ai">Fr₁ = ${Fr1.toFixed(2)} → <span class="badge ${frClass}">${frMsg}</span><br>Eficiência de dissipação: ${(dE/E1*100).toFixed(1)}% da energia cinética absorvida.</div>
+      <div class="al ai" style="font-size:12px"><strong>Especificação:</strong> Bacia L=${Lb.toFixed(1)}m × b=${b.toFixed(1)}m × h=${(y2*1.25).toFixed(2)}m.<br>${Fr1>4.5?'Instalar blocos de impacto (tipo USBR II) para Fr₁>4.5.':Fr1>2.5?'Instalar deflectores de fundo para estabilizar ressalto oscilante.':'Sem dispositivos auxiliares necessários.'}</div>`;
+  } else if(tipo==='enrocamento'){
+    const Lr=6*D50*(V1*V1/(g*D50)-1);
+    const La=Math.max(Lr,3*b);
+    html=`
+      <div class="rg">
+        <div class="met"><div class="ml">Froude chegada Fr₁</div><div class="mv">${Fr1.toFixed(2)}</div></div>
+        <div class="met"><div class="ml">D₅₀ pedra</div><div class="mv">${(D50*100).toFixed(0)}<span class="mu">cm</span></div></div>
+        <div class="met"><div class="ml">Vel. crítica enrocamento</div><div class="mv">${vCrit.toFixed(2)}<span class="mu">m/s</span></div></div>
+        <div class="met"><div class="ml">Comprimento rip-rap L</div><div class="mv">${La.toFixed(1)}<span class="mu">m</span></div></div>
+      </div>
+      <div class="al ${V1<=vCrit?'as':'ae'}">${V1<=vCrit?`D₅₀ = ${(D50*100).toFixed(0)}cm adequado para V₁ = ${V1.toFixed(1)} m/s`:`D₅₀ insuficiente. V₁ = ${V1.toFixed(1)} m/s > Vcrit = ${vCrit.toFixed(2)} m/s. Aumentar D₅₀.`}</div>
+      <div class="al ai" style="font-size:12px"><strong>Especificação:</strong> Enrocamento L=${La.toFixed(1)}m × b=${(b*1.5).toFixed(1)}m, D₅₀=${(D50*100).toFixed(0)}cm, espessura mínima 2×D₅₀=${(D50*2*100).toFixed(0)}cm. Geotêxtil de separação na fundação.</div>`;
+  } else {
+    const Nd=Math.ceil(V1/2);
+    const h_deg=V1*V1/(2*g*Nd)*0.8;
+    html=`
+      <div class="rg">
+        <div class="met"><div class="ml">Número de degraus</div><div class="mv">${Nd}</div></div>
+        <div class="met"><div class="ml">Altura/degrau h</div><div class="mv">${h_deg.toFixed(2)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Largura/degrau l</div><div class="mv">${(h_deg*1.5).toFixed(2)}<span class="mu">m</span></div></div>
+        <div class="met"><div class="ml">Comprimento total</div><div class="mv">${(h_deg*1.5*Nd).toFixed(1)}<span class="mu">m</span></div></div>
+      </div>
+      <div class="al ai" style="font-size:12px"><strong>Especificação:</strong> ${Nd} degraus de h=${h_deg.toFixed(2)}m × l=${(h_deg*1.5).toFixed(2)}m em concreto armado. Verificar armadura ao cisalhamento.</div>`;
+  }
+  document.getElementById('dissipador-result').innerHTML=html;
+}
+
+// ---------- VALETA DE CRISTA ----------
+function calcValeta(){
+  const Q=fv('v-Q'),I=fv('v-I'),n=fv('v-n'),dist=fv('v-dist'),Htal=fv('v-Htal'),italude=fv('v-italude');
+  const sec=sv('v-sec');
+  let z=sec==='trapezoidal'?1:sec==='triangular'?1.5:0;
+  let bBase=sec==='retangular'?0.4:0;
+  let yLow=0.01,yHigh=10,y=0;
+  for(let i=0;i<100;i++){
+    y=(yLow+yHigh)/2;
+    let A,P;
+    if(sec==='triangular'){A=z*y*y;P=2*y*Math.sqrt(1+z*z);}
+    else if(sec==='retangular'){A=bBase*y;P=bBase+2*y;}
+    else{A=(bBase+z*y)*y;P=bBase+2*y*Math.sqrt(1+z*z);}
+    const R=A/P;
+    const Qc=(1/n)*A*Math.pow(R,2/3)*Math.pow(I,0.5);
+    if(Math.abs(Qc-Q)<0.0001){break}
+    if(Qc<Q){yLow=y}else{yHigh=y}
+  }
+  let A,P;
+  if(sec==='triangular'){A=z*y*y;P=2*y*Math.sqrt(1+z*z);}
+  else if(sec==='retangular'){A=bBase*y;P=bBase+2*y;}
+  else{A=(bBase+z*y)*y;P=bBase+2*y*Math.sqrt(1+z*z);}
+  const R=A/P;
+  const V=(1/n)*Math.pow(R,2/3)*Math.pow(I,0.5);
+  const H=y+0.25;
+  const Lext=dist+italude*Htal;
+
+  document.getElementById('valeta-result').innerHTML=`
+    <div class="rg">
+      <div class="met"><div class="ml">Lâmina d'água y</div><div class="mv">${y.toFixed(3)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Altura total H</div><div class="mv">${H.toFixed(2)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Velocidade V</div><div class="mv">${V.toFixed(2)}<span class="mu">m/s</span></div></div>
+      <div class="met"><div class="ml">Raio hidráulico R</div><div class="mv">${R.toFixed(3)}<span class="mu">m</span></div></div>
+    </div>
+    <div class="rg">
+      <div class="met"><div class="ml">Dist. eixo à crista</div><div class="mv">${dist.toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Extensão corte talude</div><div class="mv">${(italude*Htal).toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Posição do eixo valeta</div><div class="mv">${Lext.toFixed(1)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Seção</div><div class="mv" style="font-size:14px">${sec==='trapezoidal'?'Trap.':sec==='triangular'?'Tri.':'Ret.'}</div></div>
+    </div>
+    <div class="al ${V<=4.5?'ai':V<=6?'aw':'ae'}">${V<=4.5?'Velocidade segura — sem necessidade de revestimento especial.':V<=6?'Velocidade elevada — revestimento em concreto obrigatório.':'Velocidade crítica — avaliar dissipador intermediário ou declividade menor.'}</div>
+    <div class="al ai" style="font-size:12px"><strong>Implantação:</strong> Eixo da valeta a ${Lext.toFixed(1)}m da crista do talude (${dist.toFixed(1)}m de dist. mínima + ${(italude*Htal).toFixed(1)}m de corte no talude ${italude}:1).<br><strong>Especificação:</strong> Seção ${sec}, y=${y.toFixed(3)}m, H=${H.toFixed(2)}m, n=${n}, I=${I}, revestimento ${V>3?'concreto':'terra compactada'}.</div>
+  `;
+}
+
+// ---------- SARJETA DE PISTA ----------
+function calcSarjeta(){
+  const W=fv('s-W'),e=fv('s-e')/100,S=fv('s-S')/100,L=fv('s-L'),i=fv('s-i'),C=fv('s-C');
+  const n=fv('s-n'),z1=fv('s-z1'),z2=fv('s-z2');
+  const A_pista=W*L/10000;
+  const Q=C*i*A_pista/360;
+  let yLow=0.001,yHigh=2,y=0;
+  for(let k=0;k<100;k++){
+    y=(yLow+yHigh)/2;
+    const A=(z1+z2)*y*y/2;
+    const P=y*(Math.sqrt(1+z1*z1)+Math.sqrt(1+z2*z2));
+    const R=A/P;
+    const Qc=(1/n)*A*Math.pow(R,2/3)*Math.pow(S,0.5);
+    if(Math.abs(Qc-Q)<0.00001){break}
+    if(Qc<Q){yLow=y}else{yHigh=y}
+  }
+  const A=(z1+z2)*y*y/2;
+  const P=y*(Math.sqrt(1+z1*z1)+Math.sqrt(1+z2*z2));
+  const R=A/P;
+  const V=(1/n)*Math.pow(R,2/3)*Math.pow(S,0.5);
+  const T=(z1+z2)*y;
+
+  document.getElementById('sarjeta-result').innerHTML=`
+    <div class="al ai">Área contribuinte: ${(A_pista*10000).toFixed(0)} m² → <strong>Q = ${Q.toFixed(4)} m³/s</strong></div>
+    <div class="rg">
+      <div class="met"><div class="ml">Profundidade y</div><div class="mv">${(y*100).toFixed(1)}<span class="mu">cm</span></div></div>
+      <div class="met"><div class="ml">Largura na lâmina T</div><div class="mv">${T.toFixed(3)}<span class="mu">m</span></div></div>
+      <div class="met"><div class="ml">Velocidade V</div><div class="mv">${V.toFixed(2)}<span class="mu">m/s</span></div></div>
+      <div class="met"><div class="ml">Raio hidráulico R</div><div class="mv">${R.toFixed(4)}<span class="mu">m</span></div></div>
+    </div>
+    <div class="al ${y<0.15?'ai':y<0.25?'aw':'ae'}">${y<0.15?`Sarjeta pouco carregada (y=${(y*100).toFixed(1)}cm) — seção eficiente.`:y<0.25?`Lâmina moderada (y=${(y*100).toFixed(1)}cm) — verificar saída lateral ou bueiro.`:`Lâmina elevada (y=${(y*100).toFixed(1)}cm) — reduzir espaçamento entre saídas (atual: ${L}m).`}</div>
+    <div class="al ai" style="font-size:12px"><strong>Especificação sarjeta triangular:</strong> z₁=${z1}:1 / z₂=${z2}:1, y=${(y*100).toFixed(1)}cm, V=${V.toFixed(2)}m/s, n=${n}, S=${(S*100).toFixed(1)}%.<br>Saídas laterais a cada ${L}m. ${y>=0.20?'Reduzir espaçamento para ≤'+Math.round(L*0.15/y)+'m recomendado.':'Espaçamento entre saídas adequado.'}</div>
+    <svg viewBox="0 0 340 100" class="diagram" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Seção transversal da sarjeta triangular">
+      <text x="170" y="12" fill="#444" font-size="10" text-anchor="middle" font-weight="600">Seção transversal — sarjeta triangular z₁=${z1}:1 / z₂=${z2}:1</text>
+      <polygon points="60,80 140,${80-y*80} 200,80" fill="#B5D4F4" opacity="0.6"/>
+      <polyline points="60,80 140,${80-y*80} 200,80" fill="none" stroke="#185FA5" stroke-width="2"/>
+      <line x1="60" y1="80" x2="300" y2="80" stroke="#888" stroke-width="0.5"/>
+      <line x1="140" y1="${80-y*80}" x2="140" y2="80" stroke="#fab219" stroke-width="1" stroke-dasharray="3,2"/>
+      <text x="145" y="${80-y*40}" fill="#854F0B" font-size="9">y=${(y*100).toFixed(1)}cm</text>
+      <text x="130" y="97" fill="#444" font-size="9" text-anchor="middle">T=${T.toFixed(3)}m</text>
+    </svg>`;
+}
+
+// ---------- MÉTODO RACIONAL ----------
+function calcRacional(){
+  const A=fv('r-A'), C=fv('r-C'), L=fv('r-L'), S=fv('r-S'), i=fv('r-i'), Tr=sv('r-Tr');
+  if(!A||!i||A<=0||i<=0){showErr('racional-result','Verifique os valores de entrada.');return}
+  const Tc_h=(0.0195 * Math.pow(L,0.77) * Math.pow(S,-0.385)) / 60;
+  const Tc_min=Tc_h*60;
+  const Q = C * i * A / 360;
+  const valid = Tc_min>=5 && Tc_min<=120;
+
+  document.getElementById('racional-result').innerHTML=`
+    <div class="card" style="border-color:#9FE1CB">
+      <div class="ctitle">Vazão de pico (Tr = ${Tr} anos)</div>
+      <div style="font-size:36px;font-weight:700;color:var(--accent-strong)">${Q.toFixed(3)} <span style="font-size:16px">m³/s</span></div>
+    </div>
+    <div class="rg">
+      <div class="met"><div class="ml">Tempo de concentração</div><div class="mv">${Tc_min.toFixed(1)}<span class="mu">min</span></div></div>
+      <div class="met"><div class="ml">Intensidade adotada</div><div class="mv">${i.toFixed(0)}<span class="mu">mm/h</span></div></div>
+      <div class="met"><div class="ml">Coef. runoff C</div><div class="mv">${C.toFixed(2)}</div></div>
+      <div class="met"><div class="ml">Área</div><div class="mv">${A.toFixed(0)}<span class="mu">ha</span></div></div>
+    </div>
+    <div class="al ${valid?'ai':'aw'}">Tc = ${Tc_min.toFixed(1)} min (Kirpich). ${valid?'Dentro do intervalo válido do Método Racional (5–120 min).':'Tc fora do intervalo ideal. Avaliar método de hidrograma (SCS/HEC-HMS).'}</div>
+    <div class="al ai" style="font-size:12px">
+      <strong>Fórmula:</strong> Q = C·i·A / 360 = ${C}×${i}×${A}/360 = <strong>${Q.toFixed(3)} m³/s</strong><br>
+      <strong>Kirpich:</strong> Tc = 0,0195·L^0,77·S^−0,385 = ${Tc_min.toFixed(1)} min<br>
+      <strong>Nota:</strong> Use esta Q como entrada nos módulos de canal ou tubo.
+    </div>
+    <button class="btn" onclick="propagarQ(${Q.toFixed(4)})">Usar Q=${Q.toFixed(3)} m³/s nos outros módulos →</button>
+  `;
+}
+
+function propagarQ(q){
+  ['c-Q','t-Q','b-Q','rel-Q'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value=q.toFixed(3);
+  });
+  alert('Vazão Q='+q.toFixed(3)+' m³/s aplicada aos módulos de canal, tubo, bacia e memorial.');
+}
+
+// ---------- RELATÓRIO ----------
+let estrutCount=0;
+function addEstrutura(){
+  const row=document.createElement('div');
+  row.style='display:grid;grid-template-columns:2fr 2fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
+  const id=estrutCount++;
+  row.innerHTML=`
+    <input type="text" placeholder="Estrutura (ex: Canal C1)" style="padding:7px 9px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface-1)" id="est-nome-${id}">
+    <input type="text" placeholder="Dimensões" style="padding:7px 9px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface-1)" id="est-dim-${id}">
+    <input type="text" placeholder="Q (m³/s)" style="padding:7px 9px;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface-1)" id="est-q-${id}">
+    <button style="padding:7px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--surface-1);cursor:pointer;color:var(--text-muted)" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('est-rows').appendChild(row);
+}
+
+function gerarRelatorio(){
+  const nome=sv('rel-nome')||'—', local=sv('rel-local')||'—';
+  const eng=sv('rel-eng')||'—', Tr=sv('rel-Tr'), obs=sv('rel-obs')||'Nenhuma.';
+  const A=fv('rel-A'), C=fv('rel-C'), i_val=fv('rel-i'), Q=fv('rel-Q');
+  let dataStr=sv('rel-data');
+  if(!dataStr){dataStr=new Date().toLocaleDateString('pt-BR');}
+  else{dataStr=new Date(dataStr+'T12:00:00').toLocaleDateString('pt-BR');}
+
+  const rows=document.querySelectorAll('#est-rows > div');
+  let tabEst='';
+  rows.forEach((_,k)=>{
+    const nom=document.getElementById('est-nome-'+k)?.value||'';
+    const dim=document.getElementById('est-dim-'+k)?.value||'';
+    const qq=document.getElementById('est-q-'+k)?.value||'';
+    if(nom)tabEst+=`<tr><td>${nom}</td><td>${dim}</td><td>${qq}</td></tr>`;
+  });
+
+  document.getElementById('relatorio-out').innerHTML=`
+    <div class="card" style="border-color:#9FE1CB">
+      <div style="border-bottom:0.5px solid var(--border);padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:17px;font-weight:700">${nome}</div>
+        <div style="font-size:13px;color:var(--text-secondary);margin-top:2px">${local} — Memorial descritivo de drenagem superficial</div>
+      </div>
+      <table class="res">
+        <tr><th style="width:40%">Item</th><th>Valor</th></tr>
+        <tr><td>Engenheiro responsável</td><td>${eng}</td></tr>
+        <tr><td>Data</td><td>${dataStr}</td></tr>
+        <tr><td>Período de retorno</td><td>Tr = ${Tr} anos</td></tr>
+        <tr><td>Área da bacia</td><td>${A.toFixed(1)} ha</td></tr>
+        <tr><td>Coef. de runoff ponderado C</td><td>${C.toFixed(2)}</td></tr>
+        <tr><td>Intensidade de projeto i</td><td>${i_val.toFixed(0)} mm/h</td></tr>
+        <tr class="highlight-row"><td>Vazão de pico de projeto Q</td><td>${Q.toFixed(3)} m³/s</td></tr>
+      </table>
+      <div class="divider"></div>
+      <div class="ctitle">Estruturas de drenagem projetadas</div>
+      ${tabEst?`<table class="res"><tr><th>Estrutura</th><th>Dimensões</th><th>Q (m³/s)</th></tr>${tabEst}</table>`:'<div style="font-size:13px;color:var(--text-muted)">Nenhuma estrutura cadastrada.</div>'}
+      <div class="divider"></div>
+      <div class="ctitle">Observações e condicionantes</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">${obs}</div>
+      <div class="divider"></div>
+      <div style="font-size:11px;color:var(--text-muted)">Memorial gerado pelo aplicativo de dimensionamento hidráulico — Samarco Mineração. Referências: NBR 10844, DNIT 018/2004-PRO, ABNT NBR 7229, Manual DAER-MG.</div>
+    </div>
+    <button class="btn" onclick="window.print()">Imprimir / salvar como PDF</button>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  addEstrutura();
+  document.getElementById('rel-data').value=new Date().toISOString().split('T')[0];
+});
+
+// ---------- PWA: SERVICE WORKER + INSTALL PROMPT ----------
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',(e)=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('installBanner').style.display='flex';
+});
+document.getElementById('installBtn').addEventListener('click',async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  document.getElementById('installBanner').style.display='none';
+});
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('installBanner').style.display='none';
+});
+</script>
+</body>
+</html>
